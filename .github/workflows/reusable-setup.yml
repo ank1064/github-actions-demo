@@ -1,0 +1,42 @@
+name: Reusable Setup
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Target environment label
+        required: false
+        type: string
+        default: dev
+    outputs:
+      repo-name:
+        description: Repository name
+        value: ${{ jobs.setup.outputs.repo-name }}
+      branch:
+        description: Branch name
+        value: ${{ jobs.setup.outputs.branch }}
+      environment:
+        description: Environment label
+        value: ${{ jobs.setup.outputs.environment }}
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      repo-name: ${{ steps.env.outputs.repo-name }}
+      branch: ${{ steps.env.outputs.branch }}
+      environment: ${{ steps.label.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Print environment info
+        id: env
+        uses: ./.github/actions/print-env
+
+      - name: Set environment label
+        id: label
+        shell: bash
+        run: |
+          echo "Target environment: ${{ inputs.environment }}"
+          echo "environment=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"

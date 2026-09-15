@@ -1,0 +1,29 @@
+name: Reusable Validate
+
+on:
+  workflow_call:
+    inputs:
+      strict:
+        description: Fail if required files are missing
+        required: false
+        type: boolean
+        default: true
+    outputs:
+      status:
+        description: Validation result
+        value: ${{ jobs.validate.outputs.status }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.check.outputs.status }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run validation
+        id: check
+        uses: ./.github/actions/validate
+        with:
+          strict: ${{ inputs.strict }}

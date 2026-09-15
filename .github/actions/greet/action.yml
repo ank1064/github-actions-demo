@@ -1,0 +1,15 @@
+name: Greet
+description: Print a greeting using a custom JavaScript action
+
+inputs:
+  name:
+    description: Name to greet
+    required: true
+
+outputs:
+  message:
+    description: Greeting message
+
+runs:
+  using: node20
+  main: index.js

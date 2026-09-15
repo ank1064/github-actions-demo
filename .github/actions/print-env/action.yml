@@ -1,0 +1,23 @@
+name: Print Environment
+description: Print repository and workflow environment info
+
+outputs:
+  repo-name:
+    description: Repository name
+    value: ${{ steps.print.outputs.repo-name }}
+  branch:
+    description: Branch name
+    value: ${{ steps.print.outputs.branch }}
+
+runs:
+  using: composite
+  steps:
+    - id: print
+      shell: bash
+      run: |
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "repo-name=${{ github.repository }}" >> "$GITHUB_OUTPUT"
+        echo "branch=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"

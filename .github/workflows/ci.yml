@@ -7,19 +7,43 @@ on:
     branches: [main]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  setup:
+    uses: ./.github/workflows/reusable-setup.yml
+    with:
+      environment: production
 
+  validate:
+    needs: setup
+    uses: ./.github/workflows/reusable-validate.yml
+    with:
+      strict: true
+
+  greet:
+    needs: setup
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Print environment info
-        run: |
-          echo "Running CI for ${{ github.repository }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
+      - name: Greet from custom action
+        id: greet
+        uses: ./.github/actions/greet
+        with:
+          name: ${{ needs.setup.outputs.repo-name }}
 
-      - name: Run simple validation
+      - name: Show greeting output
+        run: echo "${{ steps.greet.outputs.message }}"
+
+  summary:
+    needs: [setup, validate, greet]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Pipeline summary
         run: |
-          echo "Validation passed!"
+          echo "=== CI Pipeline Summary ==="
+          echo "Repository : ${{ needs.setup.outputs.repo-name }}"
+          echo "Branch     : ${{ needs.setup.outputs.branch }}"
+          echo "Environment: ${{ needs.setup.outputs.environment }}"
+          echo "Validation : ${{ needs.validate.outputs.status }}"
+          echo "==========================="

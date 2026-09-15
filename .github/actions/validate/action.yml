@@ -1,0 +1,42 @@
+name: Validate
+description: Run simple repository validation checks
+
+inputs:
+  strict:
+    description: Fail if required files are missing
+    required: false
+    default: "true"
+
+outputs:
+  status:
+    description: Validation result
+    value: ${{ steps.validate.outputs.status }}
+
+runs:
+  using: composite
+  steps:
+    - id: validate
+      shell: bash
+      run: |
+        echo "Running validation (strict=${{ inputs.strict }})..."
+
+        if [ -f README.md ]; then
+          echo "README.md found"
+        else
+          echo "README.md missing"
+          if [ "${{ inputs.strict }}" = "true" ]; then
+            exit 1
+          fi
+        fi
+
+        if [ -d .github/workflows ]; then
+          echo "Workflows directory found"
+        else
+          echo "Workflows directory missing"
+          if [ "${{ inputs.strict }}" = "true" ]; then
+            exit 1
+          fi
+        fi
+
+        echo "Validation passed!"
+        echo "status=passed" >> "$GITHUB_OUTPUT"
