@@ -1,9 +1,0 @@
-{
-  "name": "greet-action",
-  "version": "1.0.0",
-  "private": true,
-  "main": "index.js",
-  "dependencies": {
-    "@actions/core": "^1.11.1"
-  }
-}

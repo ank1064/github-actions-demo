@@ -1,7 +1,11 @@
-const core = require('@actions/core');
+const fs = require('fs');
 
-const name = core.getInput('name', { required: true });
+const name = process.env.INPUT_NAME;
+if (!name) {
+  console.error('Input "name" is required');
+  process.exit(1);
+}
+
 const message = `Hello from custom action, ${name}!`;
-
-core.info(message);
-core.setOutput('message', message);
+console.log(message);
+fs.appendFileSync(process.env.GITHUB_OUTPUT, `message=${message}\n`);
