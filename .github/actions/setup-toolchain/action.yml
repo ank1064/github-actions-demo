@@ -1,0 +1,42 @@
+name: Setup Toolchain
+description: Install Node and restore the dependency cache used by every job.
+
+inputs:
+  node-version:
+    description: Node major version to install
+    required: false
+    default: "20"
+  cache-key-prefix:
+    description: Prefix for the dependency cache key
+    required: false
+    default: npm
+  install-args:
+    description: Extra flags passed to npm ci
+    required: false
+    default: ""
+
+outputs:
+  cache-hit:
+    description: Whether the dependency cache was restored
+    value: ${{ steps.deps.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Use Node ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Restore dependency cache
+      id: deps
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: ${{ inputs.cache-key-prefix }}-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ inputs.cache-key-prefix }}-${{ runner.os }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci ${{ inputs.install-args }}
