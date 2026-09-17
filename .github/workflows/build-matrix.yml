@@ -1,0 +1,97 @@
+name: Build Matrix
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: Tag to publish
+        required: false
+        default: dev
+
+env:
+  CI: "true"
+  ARTIFACT_DIR: build/out
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-toolchain
+        with:
+          node-version: "20"
+          cache-key-prefix: lint
+      - name: Run ESLint
+        run: npm run lint -- --max-warnings 0
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["18", "20", "22"]
+        suite: [unit, integration]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: appdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-toolchain
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache-key-prefix: test-${{ matrix.suite }}
+      - name: Run ${{ matrix.suite }} tests
+        env:
+          DATABASE_URL: postgres://postgres:testpass@localhost:5432/appdb
+        run: npm run test:${{ matrix.suite }}
+      - name: Upload coverage
+        if: matrix.suite == 'unit'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.node-version }}-${{ matrix.suite }}
+          path: coverage/
+
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup toolchain
+        uses: ./.github/actions/setup-toolchain
+      - name: Build production bundle
+        run: |
+          npm run build
+          mkdir -p "$ARTIFACT_DIR"
+          tar -czf "$ARTIFACT_DIR/app.tar.gz" dist
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-bundle
+          path: ${{ env.ARTIFACT_DIR }}/app.tar.gz
+
+  publish:
+    needs: package
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable-docker-publish.yml
+    with:
+      image-name: ghcr.io/ank1064/demo-app
+      image-tag: ${{ github.event.inputs.image-tag || github.sha }}
+      push: false
+    secrets:
+      REGISTRY_USERNAME: ${{ github.actor }}
+      REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
