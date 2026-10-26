@@ -1,0 +1,14 @@
+name: mbench K8s Rolling Deploy
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Rolling Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rolling deploy
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl rollout status deployment/app --timeout=300s
