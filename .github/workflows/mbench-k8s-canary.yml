@@ -1,0 +1,17 @@
+name: mbench K8s Canary Deploy
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Canary Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/k8s-deploy@v5
+        with:
+          namespace: prod
+          manifests: k8s/deployment.yaml
+          strategy: canary
+          percentage: 20
+          action: deploy
