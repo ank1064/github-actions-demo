@@ -1,0 +1,13 @@
+name: mbench Helm Deploy
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Helm Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Helm Upgrade Install
+        run: helm upgrade --install app ./charts/app --namespace prod --atomic --wait
