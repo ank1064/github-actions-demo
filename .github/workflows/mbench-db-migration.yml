@@ -1,0 +1,15 @@
+name: mbench DB Migration
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    name: Flyway Migrate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Flyway Migrate
+        run: |
+          docker run --rm -v $PWD/sql:/flyway/sql flyway/flyway:10 \
+            -url=jdbc:postgresql://db.example.com:5432/app \
+            -user=${{ secrets.DB_USER }} -password=${{ secrets.DB_PASSWORD }} migrate
